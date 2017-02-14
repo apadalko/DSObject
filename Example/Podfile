@@ -1,0 +1,7 @@
+use_frameworks!
+target 'DSObject_Tests' do
+  pod 'DSObject', :path => '../'
+  
+  pod 'Specta'
+  pod 'Expecta'
+end
