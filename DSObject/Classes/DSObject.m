@@ -15,11 +15,14 @@
 #import "DSObjectsManager.h"
 #import "DSObjectsRamStorage.h"
 
+
+
 @interface DSObject ()
 {
     NSObject *lock;
     DSObjectsManager * _objectsManager;
-    NSString * _storageClassName;
+    NSString * _storageName;
+    NSString * _identifierKey;
 }
 
 @property (nonnull,nonatomic,retain)NSMutableDictionary * _data;
@@ -28,16 +31,25 @@
 
 @end
 @implementation DSObject
+
 @synthesize _data=__data;
 @dynamic className;
 @dynamic objectId;
-//@synthesize objectId=_objectId;
+
 @synthesize  locked=_locked;
+
+#pragma mark - ObjectId
+
+
+#pragma mark -
+
 -(void)setKeyValues:(NSDictionary *)keyValues{
     for (NSString * key in keyValues) {
         [self setObject:[keyValues valueForKey:key] forKey:key];
     }
 }
+
+
 
 +(void)clearRam{
     [DSObjectsRamStorage clean];
@@ -46,22 +58,42 @@
 -(void)willAddToStorage:(BOOL)fetched{
     
 }
--(NSString*)storageClassName{
-    if (!_storageClassName) {
-        _storageClassName=NSStringFromClass([self class]);
+-(void)setCustomStorageName:(NSString*)storageName{
+    _storageName=storageName;
+}
+-(void)setCustomIdentifierKey:(NSString*)identifierKey{
+    _identifierKey = identifierKey;
+}
+-(NSString*)identifierKey{
+    if (_identifierKey==nil) {
+        _identifierKey=@"objectId";
     }
-    return _storageClassName;
+    return _identifierKey;
+}
+-(NSString*)storageName{
+    if (!_storageName) {
+        _storageName=NSStringFromClass([self class]);
+    }
+    return _storageName;
 }
 
 -(NSString *)objectId{
-    return [self _data][@"objectId"];
+    id a = [self _data][[self identifierKey]];
+    return a;
 }
 -(void)setObjectId:(NSString *)objectId{
-    [self _data][@"objectId"]=objectId;
+    [self _data][[self identifierKey]]=objectId;
 }
 
 -(DSObject*)localSync:(BOOL)fetched{
-    DSObject * obj = [[DSObjectsRamStorage storageForClassName:[self storageClassName]] registerOrGetRecentObjectFromStorage:self fetched:fetched];
+    
+    
+    if (!_storageName && [self class] == [DSObject class]) {
+        return self;
+    }
+    
+    
+    DSObject * obj = [[DSObjectsRamStorage storageForClassName:[self storageName]] registerOrGetRecentObjectFromStorage:self fetched:fetched];
     
     if ([obj isEqual:self]) {
         return obj;
@@ -87,22 +119,14 @@
     }
     
 }
-+(instancetype)objectWithData:(NSDictionary*)data{
-    
+
+
+
++(_Nonnull instancetype)objectWithData:(NSDictionary* _Nullable)data sync:(BOOL)sync storageName:(NSString*)storageName{
     DSObject * obj = [[self alloc] init];
-    
-    for (NSString * key in data) {
-        [obj setObject:[data valueForKey:key] forKey:key];
-        
+    if (storageName) {
+        [obj setCustomStorageName:storageName];
     }
-    
-    return [obj localSync:NO];
-    
-}
-+(instancetype)objectWithData:(NSDictionary*)data sync:(BOOL)sync{
-    
-    DSObject * obj = [[self alloc] init];
-    
     for (NSString * key in data) {
         [obj setObject:[data valueForKey:key] forKey:key];
         
@@ -111,8 +135,20 @@
         return [obj localSync:NO];
     }else return obj;
     
-    
 }
++(_Nonnull instancetype)objectWithData:(NSDictionary* _Nullable)data storageName:(NSString*_Nullable)storageName{
+    return [self objectWithData:data sync:YES storageName:storageName];
+}
++(instancetype)objectWithData:(NSDictionary*)data sync:(BOOL)sync{
+    return [self objectWithData:data sync:sync storageName:nil];
+}
+
++(instancetype)objectWithData:(NSDictionary*)data{
+    return [self objectWithData:data sync:YES];
+}
+
+
+
 
 - (instancetype)init {
     lock = [[NSObject alloc] init];

@@ -32,7 +32,6 @@ NS_REQUIRES_PROPERTY_DEFINITIONS
 
 
 
-
 -(void)willAddToStorage:(BOOL)fetched;
 -(NSDictionary* _Nonnull)convertToDictionary;
 

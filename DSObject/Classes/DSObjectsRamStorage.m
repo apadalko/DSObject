@@ -43,7 +43,14 @@ static NSMutableDictionary * storageData;
         return object;
     }
     @synchronized (self.mapTable) {
-        DSObject * oldObj = [self.mapTable objectForKey:[object objectId]];
+        
+        id key = [object objectId];
+        
+        if ([key isKindOfClass:[NSNumber class]]) {
+            key = [key stringValue];
+        }
+        
+        DSObject * oldObj = [self.mapTable objectForKey:key];
         
         if (!oldObj) {
             [self.mapTable setObject:object forKey:[object objectId]];
@@ -55,7 +62,7 @@ static NSMutableDictionary * storageData;
                 return oldObj;
             }else if ([[object class] isSubclassOfClass:[oldObj class]]){
                 
-                [self.mapTable setObject:object forKey:[object objectId]];
+                [self.mapTable setObject:object forKey:key];
                 
                 return object;
             }else {
