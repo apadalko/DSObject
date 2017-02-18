@@ -10,11 +10,24 @@
 #import "DSObject.h"
 @interface DSObject ()
 
++(instancetype)objectWithType:(NSString*)type andIdentifier:(NSString*)identifier andData:(NSDictionary*)data sync:(BOOL)sync;
+
+#pragma mark -
 
 +(_Nonnull instancetype)objectWithData:(NSDictionary* _Nullable)data storageName:(NSString* _Nullable)storageName;
 +(_Nonnull instancetype)objectWithData:(NSDictionary* _Nullable)data sync:(BOOL)sync storageName:(NSString* _Nullable)storageName;
 +(_Nonnull instancetype)objectWithData:(NSDictionary* _Nullable)data sync:(BOOL)sync;
--(DSObject * _Nonnull)localSync:(BOOL)fetched;
+-(_Nonnull instancetype)localSync:(BOOL)fetched;
 -(void)setCustomStorageName:(NSString * _Nonnull)storageName;
--(void)setCustomIdentifierKey:(NSString* _Nonnull)identifierKey;
+
+
+////
+-(void)setLocked:(BOOL)locked;
+-(instancetype)sync:(BOOL)override;
+-(BOOL)allowedToUseRamStorage;
+-(NSString*)generateFinalStorageName;
+-(NSString*)storageName;
+
+
+-(void)copyToObject:(DSObject*)toObject override:(BOOL)override;
 @end

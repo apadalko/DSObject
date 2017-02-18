@@ -38,13 +38,13 @@ static NSMutableDictionary * storageData;
         storageData=nil;
     }
 }
--(DSObject*)registerOrGetRecentObjectFromStorage:(DSObject*)object fetched:(BOOL)fetched{
-    if (![object objectId]) {
+-(id)registerOrGetRecentObject:(id)object fromStorageByIndetifier:(NSString*)indetifier{
+    if (!indetifier) {
         return object;
     }
     @synchronized (self.mapTable) {
         
-        id key = [object objectId];
+        id key = indetifier;
         
         if ([key isKindOfClass:[NSNumber class]]) {
             key = [key stringValue];
@@ -53,21 +53,27 @@ static NSMutableDictionary * storageData;
         DSObject * oldObj = [self.mapTable objectForKey:key];
         
         if (!oldObj) {
-            [self.mapTable setObject:object forKey:[object objectId]];
-            [object willAddToStorage:fetched];
+            [self.mapTable setObject:object forKey:[object identifier]];
             return object;
         }else{
             
-            if ([oldObj class]==[object class]||[[oldObj class] isSubclassOfClass:[object class]]) {
-                return oldObj;
-            }else if ([[object class] isSubclassOfClass:[oldObj class]]){
-                
-                [self.mapTable setObject:object forKey:key];
-                
-                return object;
-            }else {
-                return object;
-            }
+            
+            /// why i did this statement for subclasses ?? it shouldn't work basiclly...each class - own fck storage
+            /// mb in future updates ill add some kind of wrapper with forwarded invocations , that if someone already referenced
+            /// object will also get updated data
+            /// for now this one is ok
+            return oldObj;
+            
+//            if ([oldObj class]==[object class]||[[oldObj class] isSubclassOfClass:[object class]]) {
+//                return oldObj;
+//            }else if ([[object class] isSubclassOfClass:[oldObj class]]){
+//                
+//                [self.mapTable setObject:object forKey:key];
+//                
+//                return object;
+//            }else {
+//                return object;
+//            }
             
             
         }
@@ -76,7 +82,7 @@ static NSMutableDictionary * storageData;
 }
 -(NSMapTable *)mapTable{
     if (!_mapTable) {
-        _mapTable=[NSMapTable  mapTableWithKeyOptions:NSPointerFunctionsWeakMemory valueOptions:NSPointerFunctionsStrongMemory];
+        _mapTable=[NSMapTable  mapTableWithKeyOptions:NSPointerFunctionsStrongMemory valueOptions:NSPointerFunctionsWeakMemory];
     }
     return _mapTable;
 }

@@ -117,14 +117,14 @@ static objc_property_t genObjcProperty(Class klass, SEL sel, SEL outPair[2]) {
 #pragma mark - chache storage
 
 -(DSObject*)registerOrGetRecentObjectFromStorage:(DSObject*)object fetched:(BOOL)fetched{
-    if (![object objectId]) {
+    if (![object identifier]) {
         return object;
     }
     @synchronized (self.mapTable) {
-        DSObject * oldObj = [self.mapTable objectForKey:[object objectId]];
+        DSObject * oldObj = [self.mapTable objectForKey:[object identifier]];
         
         if (!oldObj) {
-            [self.mapTable setObject:object forKey:[object objectId]];
+            [self.mapTable setObject:object forKey:[object identifier]];
             return object;
         }else{
             return oldObj;

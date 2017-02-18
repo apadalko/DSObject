@@ -17,12 +17,18 @@
 
 
 
+
+
+
+NSString *const kDSIdentifier = @"identifier";
+
+
 @interface DSObject ()
 {
     NSObject *lock;
     DSObjectsManager * _objectsManager;
     NSString * _storageName;
-    NSString * _identifierKey;
+  
 }
 
 @property (nonnull,nonatomic,retain)NSMutableDictionary * _data;
@@ -33,13 +39,75 @@
 @implementation DSObject
 
 @synthesize _data=__data;
-@dynamic className;
-@dynamic objectId;
+@dynamic identifier;
 
 @synthesize  locked=_locked;
 
 #pragma mark - ObjectId
 
+
+
+#pragma mark - constructors
+
+
++(_Nonnull instancetype)objectWithData:(NSDictionary* _Nullable )data{
+    DSAssert(self != [DSObject class], @"Available only for subclasses");
+    return [self objectWithType:nil andIdentifier:nil andData:data sync:YES];
+
+}
++(instancetype)objectWithIdentifier:(NSString*)identifier{
+    DSAssert(self != [DSObject class], @"Available only for subclasses");
+    return [self objectWithType:nil andIdentifier:identifier andData:nil sync:YES];
+}
++(instancetype)objectWithIdentifier:(NSString*)identifier andData:(NSDictionary*)data{
+    DSAssert(self != [DSObject class], @"Available only for subclasses");
+    return [self objectWithType:nil andIdentifier:identifier andData:data sync:YES];
+}
+
+
++(instancetype)objectWithType:(NSString*)type andData:(NSDictionary*)data{
+    return [self objectWithType:type andIdentifier:nil andData:data sync:YES];
+}
++(instancetype)objectWithType:(NSString*)type andIdentifier:(NSString*)identifier{
+    return [self objectWithType:type andIdentifier:identifier andData:nil sync:YES];
+}
++(instancetype)objecWithType:(NSString*)type andIdentifier:(NSString*)identifier andData:(NSDictionary*)data{
+    return [self objectWithType:type andIdentifier:identifier andData:data sync:YES];
+}
+
+#pragma mark private
++(instancetype)objectWithType:(NSString*)type andIdentifier:(NSString*)identifier andData:(NSDictionary*)data sync:(BOOL)sync{
+    DSObject * obj = [[self alloc] init];
+    if (type) {
+        [obj setCustomStorageName:type];
+    }
+    for (NSString * key in data) {
+        [obj setObject:[data valueForKey:key] forKey:key];
+        
+    }
+    
+    if (sync) {
+        return [obj sync:YES];
+    }else return obj;
+}
+- (instancetype)init {
+    lock = [[NSObject alloc] init];
+    return self;
+}
+
+#pragma mark - private methods
+
+
+
+-(NSString*)identifierKey{
+    return [[self class] identifierKey];
+}
+
+#pragma mark - public static
+
++(NSString*)identifierKey{
+    return kDSIdentifier;
+}
 
 #pragma mark -
 
@@ -54,27 +122,23 @@
 +(void)clearRam{
     [DSObjectsRamStorage clean];
 }
-
--(void)willAddToStorage:(BOOL)fetched{
-    
+-(BOOL)allowedToUseRamStorage{
+    return self.class != [DSObject class] || _storageName!=nil;
 }
 -(void)setCustomStorageName:(NSString*)storageName{
     _storageName=storageName;
 }
--(void)setCustomIdentifierKey:(NSString*)identifierKey{
-    _identifierKey = identifierKey;
-}
--(NSString*)identifierKey{
-    if (_identifierKey==nil) {
-        _identifierKey=@"objectId";
+
+-(NSString*)generateFinalStorageName{
+    NSString * storageName = [self storageName];
+    
+    if (storageName==nil) {
+        storageName=NSStringFromClass([self class]);
     }
-    return _identifierKey;
+    return storageName;
 }
 -(NSString*)storageName{
-    if (!_storageName) {
-        _storageName=NSStringFromClass([self class]);
-    }
-    return _storageName;
+    return  _storageName;
 }
 
 -(NSString *)objectId{
@@ -85,15 +149,54 @@
     [self _data][[self identifierKey]]=objectId;
 }
 
--(DSObject*)localSync:(BOOL)fetched{
+-(void)copyToObject:(DSObject*)toObject override:(BOOL)override{
     
+    [self setLocked:YES];
+    if (override) {
+        for (NSString * k in [self _data]) {
+            toObject[k]=[self _data][k];
+        }
+    }else{
+        //            for (NSString * k in [self _data]) {
+        //                if (!obj[k]) {
+        //                      obj[k]=[obj _data][k];
+        //                }
+        //
+        //            }
+    }
     
-    if (!_storageName && [self class] == [DSObject class]) {
+    [self setLocked:NO];
+}
+
+-(DSObject*)sync:(BOOL)override{
+    
+    if (![self allowedToUseRamStorage]) {
         return self;
     }
     
+ 
     
-    DSObject * obj = [[DSObjectsRamStorage storageForClassName:[self storageName]] registerOrGetRecentObjectFromStorage:self fetched:fetched];
+    DSObject * obj = [[DSObjectsRamStorage storageForClassName:[self generateFinalStorageName]] registerOrGetRecentObject:self fromStorageByIndetifier:[self identifier]];
+    
+    if ([obj isEqual:self]) {
+        return obj;
+    }
+    else{
+        [self copyToObject:obj override:override];
+        return obj;
+    }
+}
+
+#pragma mark - to remove
+-(instancetype)localSync:(BOOL)fetched{
+       // so here we need to check if local id is passing and should do double sync: 1 in main storage and then in some new refrence of local storage
+    
+    if (![self allowedToUseRamStorage]) {
+        return self;
+    }
+  
+    
+    DSObject * obj = [[DSObjectsRamStorage storageForClassName:[self generateFinalStorageName]] registerOrGetRecentObject:self fromStorageByIndetifier:[self identifier]];
     
     if ([obj isEqual:self]) {
         return obj;
@@ -119,41 +222,9 @@
     }
     
 }
+#pragma mark -
 
 
-
-+(_Nonnull instancetype)objectWithData:(NSDictionary* _Nullable)data sync:(BOOL)sync storageName:(NSString*)storageName{
-    DSObject * obj = [[self alloc] init];
-    if (storageName) {
-        [obj setCustomStorageName:storageName];
-    }
-    for (NSString * key in data) {
-        [obj setObject:[data valueForKey:key] forKey:key];
-        
-    }
-    if (sync) {
-        return [obj localSync:NO];
-    }else return obj;
-    
-}
-+(_Nonnull instancetype)objectWithData:(NSDictionary* _Nullable)data storageName:(NSString*_Nullable)storageName{
-    return [self objectWithData:data sync:YES storageName:storageName];
-}
-+(instancetype)objectWithData:(NSDictionary*)data sync:(BOOL)sync{
-    return [self objectWithData:data sync:sync storageName:nil];
-}
-
-+(instancetype)objectWithData:(NSDictionary*)data{
-    return [self objectWithData:data sync:YES];
-}
-
-
-
-
-- (instancetype)init {
-    lock = [[NSObject alloc] init];
-    return self;
-}
 
 
 #pragma mark - Key/Value Accessors
@@ -168,31 +239,24 @@
     }
 }
 #pragma mark SETTERS
+
+-(void)setValue:(id)value forKey:(NSString *)key{
+    self[key]=key;
+}
 - (void)setValue:(id)value forUndefinedKey:(NSString *)key {
     self[key] = value;
 }
 - (void)setObject:(id)object forKey:(NSString *)key {
-    [self _setObject:object forKey:key onlyIfDifferent:NO];
+    [self _setObject:object forKey:key];
 }
 
 
-- (void)_setObject:(id)object forKey:(NSString *)key onlyIfDifferent:(BOOL)onlyIfDifferent {
-    if (onlyIfDifferent) {
-        id currentObject = self[key];
-        if (currentObject == object ||
-            [currentObject isEqual:object]) {
-            return;
-        }
-    }
-    
+- (void)_setObject:(id)object forKey:(NSString *)key {
+
     id val = [self _processValue:object forKey:key];
     
     if (self.locked) {
         @synchronized (lock) {
-            
-            
-            
-            
             self._data[key]=val;
         }
     }else{

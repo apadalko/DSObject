@@ -10,6 +10,6 @@
 #import "DSObject.h"
 @interface DSObjectsRamStorage : NSObject
 +(instancetype)storageForClassName:(NSString* )className;
--(DSObject*)registerOrGetRecentObjectFromStorage:(DSObject*)object fetched:(BOOL)fetched;
+-(id)registerOrGetRecentObject:(id)object fromStorageByIndetifier:(NSString*)indetifier;
 +(void)clean;
 @end
