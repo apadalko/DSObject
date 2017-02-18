@@ -22,10 +22,10 @@ NS_REQUIRES_PROPERTY_DEFINITIONS
 
 @interface DSObject : NSObject
 
-//+(instancetype)new NS_UNAVAILABLE;
-//-(instancetype)init NS_UNAVAILABLE;
++(instancetype)new NS_UNAVAILABLE;
+-(instancetype)init NS_UNAVAILABLE;
 
-
++(_Nonnull instancetype)objectWithType:(NSString*)type;
 +(_Nonnull instancetype)objectWithType:(NSString*)type andData:(NSDictionary* _Nullable )data;
 +(instancetype)objectWithType:(NSString*)type andIdentifier:(NSString*)identifier;
 +(instancetype)objectWithType:(NSString*)type andIdentifier:(NSString*)identifier andData:(NSDictionary*)data;

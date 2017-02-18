@@ -17,6 +17,7 @@
 +(_Nonnull instancetype)objectWithData:(NSDictionary* _Nullable)data storageName:(NSString* _Nullable)storageName;
 +(_Nonnull instancetype)objectWithData:(NSDictionary* _Nullable)data sync:(BOOL)sync storageName:(NSString* _Nullable)storageName;
 +(_Nonnull instancetype)objectWithData:(NSDictionary* _Nullable)data sync:(BOOL)sync;
+-(_Nonnull instancetype)localSync:(BOOL)fetched;
 -(void)setCustomStorageName:(NSString * _Nonnull)storageName;
 
 

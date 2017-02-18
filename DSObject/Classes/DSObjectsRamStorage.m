@@ -9,6 +9,7 @@
 #import "DSObjectsRamStorage.h"
 @interface DSObjectsRamStorage ()
 @property (nonatomic,retain)NSMapTable  * mapTable;
+@property (nonatomic,retain)NSString * name;
 @end
 @implementation DSObjectsRamStorage
 static NSMutableDictionary * storageData;
@@ -21,6 +22,7 @@ static NSMutableDictionary * storageData;
         DSObjectsRamStorage * storage = [storageData valueForKey:className];
         if (!storage) {
             storage=[[DSObjectsRamStorage alloc] init];
+            storage.name=className;
             [storageData setValue:storage forKey:className];
         }
         
