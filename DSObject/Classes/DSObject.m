@@ -83,7 +83,6 @@ NSString *const kDSIdentifier = @"identifier";
     }
     for (NSString * key in data) {
         [obj setObject:[data valueForKey:key] forKey:key];
-        
     }
     
     if (sync) {
@@ -94,6 +93,17 @@ NSString *const kDSIdentifier = @"identifier";
     lock = [[NSObject alloc] init];
     return self;
 }
+
+
+
+
+-(void)setIdentifier:(NSString *)identifier{
+    self._data[[self identifierKey]]=identifier;
+}
+-(NSString *)identifier{
+    return  self._data[self.identifierKey];
+}
+
 
 #pragma mark - private methods
 
@@ -123,13 +133,13 @@ NSString *const kDSIdentifier = @"identifier";
     [DSObjectsRamStorage clean];
 }
 -(BOOL)allowedToUseRamStorage{
-    return self.class != [DSObject class] || _storageName!=nil;
+    return [self identifier] && (self.class != [DSObject class] || _storageName!=nil);
 }
 -(void)setCustomStorageName:(NSString*)storageName{
     _storageName=storageName;
 }
 
--(NSString*)generateFinalStorageName{
+-(NSString*)_ds_objectType{
     NSString * storageName = [self storageName];
     
     if (storageName==nil) {
@@ -141,13 +151,7 @@ NSString *const kDSIdentifier = @"identifier";
     return  _storageName;
 }
 
--(NSString *)objectId{
-    id a = [self _data][[self identifierKey]];
-    return a;
-}
--(void)setObjectId:(NSString *)objectId{
-    [self _data][[self identifierKey]]=objectId;
-}
+
 
 -(void)copyToObject:(DSObject*)toObject override:(BOOL)override{
     
@@ -176,7 +180,7 @@ NSString *const kDSIdentifier = @"identifier";
     
  
     
-    DSObject * obj = [[DSObjectsRamStorage storageForClassName:[self generateFinalStorageName]] registerOrGetRecentObject:self fromStorageByIndetifier:[self identifier]];
+    DSObject * obj = [[DSObjectsRamStorage storageForClassName:[self _ds_objectType]] registerOrGetRecentObject:self fromStorageByIndetifier:[self identifier]];
     
     if ([obj isEqual:self]) {
         return obj;
@@ -187,42 +191,6 @@ NSString *const kDSIdentifier = @"identifier";
     }
 }
 
-#pragma mark - to remove
--(instancetype)localSync:(BOOL)fetched{
-       // so here we need to check if local id is passing and should do double sync: 1 in main storage and then in some new refrence of local storage
-    
-    if (![self allowedToUseRamStorage]) {
-        return self;
-    }
-  
-    
-    DSObject * obj = [[DSObjectsRamStorage storageForClassName:[self generateFinalStorageName]] registerOrGetRecentObject:self fromStorageByIndetifier:[self identifier]];
-    
-    if ([obj isEqual:self]) {
-        return obj;
-    }
-    else{
-        
-        [obj setLocked:YES];
-        if (fetched) {
-            for (NSString * k in [self _data]) {
-                obj[k]=[self _data][k];
-            }
-        }else{
-            //            for (NSString * k in [self _data]) {
-            //                if (!obj[k]) {
-            //                      obj[k]=[obj _data][k];
-            //                }
-            //
-            //            }
-        }
-        
-        [obj setLocked:NO];
-        return obj;
-    }
-    
-}
-#pragma mark -
 
 
 
